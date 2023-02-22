@@ -37,5 +37,8 @@ class MultipleUploadController extends Controller
         
     }
 
-    
+    public function multipleUpload(){
+        
+    }
+
 }
