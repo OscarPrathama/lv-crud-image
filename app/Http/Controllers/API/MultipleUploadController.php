@@ -3,45 +3,37 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ImageRequest;
 use App\Models\Image;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class MultipleUploadController extends Controller
 {
-    public function upload(Request $request){
+    public function upload(ImageRequest $request){
 
-        if(!$request->hasFile('fileName')) {
-            return response()->json(['upload_file_not_found'], 400);
+        if($request->hasFile('post_image')) {
+
+            $file = $request->file('post_image');
+
+            $file_original_name = $file->getClientOriginalName();
+            $raw_file_name = pathinfo($file_original_name, PATHINFO_FILENAME);
+            $file_name = strtolower(str_replace(' ', '-', $raw_file_name));
+            $file_type = $file->getClientMimeType();
+            $file_ext = $file->getClientOriginalExtension();
+            $file_size = $file->getSize();
+            $folder = 'public/images';
+            $final_file_name = $file_name.'.'.$file_ext;
+
+            $post_image = $file->storeAs($folder, $final_file_name);
+            
+            $data = Image::create([
+                'title' => $raw_file_name,
+                'path' => $post_image
+            ]);
+
+            return response($data, Response::HTTP_CREATED);
         }
-
-        $allowedfileExtension=['pdf','jpg','png', 'jpeg'];
-        $files = $request->file('fileName'); 
-        $errors = [];
-
-        /**
-         * $files->getClientMimeType()
-         * $files->getClientOriginalExtension()
-         * $files->getClientOriginalName()
-        */
-        
-        $extension = $files->getClientOriginalExtension();
-        $check = in_array($extension, $allowedfileExtension);
-
-        if($check) {
-            $mediaFiles = $request->fileName;
-            $path = $mediaFiles->store('public/images');
-            $name = $mediaFiles->getClientOriginalName();
-        
-            //store image file into directory and db
-            $save = new Image();
-            $save->title = $name;
-            $save->path = $path;
-            $save->save();
-        } else {
-            return response()->json(['invalid_file_format'], 422);
-        }
-        
-        return response()->json(['file_uploaded'], 200);
         
     }
 
